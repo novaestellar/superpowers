@@ -353,9 +353,13 @@ async function setup(ctx) {
         )) return;
 
         // Native compaction can leave only an opaque checkpoint. Keep it
-        // intact and append the transient bootstrap as a user message.
+        // intact. Inject the transient bootstrap as a SEPARATE user message
+        // BEFORE the real one, so the user's text is never concatenated on to
+        // the 4.5KB bootstrap (weak models then treat the bootstrap as the
+        // task and ignore the real request).
         if (firstUser) {
-          firstUser.content.unshift({ type: 'text', text: bootstrap });
+          const idx = event.messages.indexOf(firstUser);
+          event.messages.splice(idx, 0, { role: 'user', content: [{ type: 'text', text: bootstrap }] });
         } else {
           event.messages.push({ role: 'user', content: [{ type: 'text', text: bootstrap }] });
         }
